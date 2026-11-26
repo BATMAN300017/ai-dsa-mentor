@@ -1,0 +1,20 @@
+{
+  "modelName": "Qwen2.5-Coder-3B-Instruct",
+  "modelProvider": "Qwen (Alibaba Cloud)",
+  "huggingFaceRepo": "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF",
+  "huggingFaceUrl": "https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct-GGUF",
+  "expectedQuantization": "Q4_K_M",
+  "expectedFileFormat": "GGUF",
+  "expectedFilename": "qwen2.5-coder-3b-instruct-q4_k_m.gguf",
+  "downloadStatus": "NOT_DOWNLOADED",
+  "checksumAlgorithm": "SHA-256",
+  "checksum": "",
+  "revision": "f74adce6aa16316c625447af059dbebe4983757c",
+  "runtimeTarget": "llama.cpp",
+  "storageStrategy": {
+    "description": "Production desktop installations store downloaded GGUF weights in the OS user application-data directory rather than the read-only application installation directory.",
+    "windows": "%LOCALAPPDATA%\\AI DSA Mentor\\models\\qwen2.5-coder-3b",
+    "macos": "~/Library/Application Support/AI DSA Mentor/models/qwen2.5-coder-3b",
+    "linux": "~/.local/share/ai-dsa-mentor/models/qwen2.5-coder-3b"
+  }
+}

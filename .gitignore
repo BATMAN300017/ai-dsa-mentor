@@ -1,0 +1,78 @@
+# Java & Maven
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+.mvn/timing.properties
+
+# Node.js / Frontend / Browser Extension
+node_modules/
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.env
+.env.local
+.env.*.local
+
+# IDEs & Editors
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.vscode/
+!.vscode/extensions.json
+.settings/
+.project
+.classpath
+.factorypath
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# AI Model Binaries & Local Runtimes (Never commit large binaries)
+*.gguf
+*.ggml
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.ckpt
+resources/models/**/*.gguf
+resources/models/**/*.bin
+resources/runtimes/**/*.exe
+resources/runtimes/**/*.dll
+resources/runtimes/**/*.so
+resources/runtimes/**/*.dylib
+resources/runtimes/llama.cpp/bin/
+
+# Desktop Packaging & Runtime Artifacts
+installer/output/
+jpackage-input/
+*.msi
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.AppImage
+
+# Logs & Runtime State
+logs/
+*.log
+*.pid
+*.lock

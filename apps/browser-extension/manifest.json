@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "AI DSA Mentor Companion",
+  "version": "0.1.0",
+  "description": "Local-first AI DSA Mentor browser companion scaffold. Connects exclusively to 127.0.0.1.",
+  "background": {
+    "service_worker": "dist/background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "AI DSA Mentor",
+    "default_popup": "dist/popup/popup.html"
+  },
+  "host_permissions": [
+    "http://127.0.0.1:8787/*"
+  ]
+}

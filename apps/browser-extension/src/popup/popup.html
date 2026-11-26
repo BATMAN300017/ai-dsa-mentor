@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AI DSA Mentor</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <header class="header">
+        <span class="brand">AI DSA Mentor</span>
+        <span class="badge">v0.1.0</span>
+      </header>
+      <p class="tagline">Think with me. Don&apos;t solve it for me.</p>
+      <section class="status-card">
+        <div class="row">
+          <span class="label">Local Backend</span>
+          <span id="backend-state" class="value connecting">Connecting...</span>
+        </div>
+        <div class="row">
+          <span class="label">Local Model</span>
+          <span id="model-state" class="value muted">Not Loaded</span>
+        </div>
+      </section>
+      <button id="refresh-btn" type="button">Check Backend</button>
+      <p class="footnote">Task 1 scaffold · No site observation active</p>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

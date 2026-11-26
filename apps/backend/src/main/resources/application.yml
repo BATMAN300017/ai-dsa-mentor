@@ -1,0 +1,37 @@
+server:
+  address: 127.0.0.1
+  port: ${BACKEND_PORT:8787}
+  shutdown: graceful
+
+spring:
+  application:
+    name: ai-dsa-mentor-backend
+  lifecycle:
+    timeout-per-shutdown-phase: 10s
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+logging:
+  level:
+    root: INFO
+    com.aidsa: INFO
+
+aidsa:
+  application-name: "AI DSA Mentor"
+  version: "0.1.0"
+  model:
+    slug: "qwen2.5-coder-3b"
+    descriptor-path: "${AIDSA_MODEL_DESCRIPTOR:}"
+  frontend:
+    dist-path: "${AIDSA_FRONTEND_DIST:}"
+  security:
+    allowed-origins:
+      - "http://127.0.0.1:5173"
+      - "http://localhost:5173"
+      - "http://127.0.0.1:4173"
+      - "http://localhost:4173"
+      - "http://127.0.0.1:8787"
+      - "http://localhost:8787"
+    allowed-extension-ids: []
+    require-local-token-for-mutations: true
