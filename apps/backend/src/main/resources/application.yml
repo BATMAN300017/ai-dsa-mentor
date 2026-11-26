@@ -23,6 +23,16 @@ aidsa:
   model:
     slug: "qwen2.5-coder-3b"
     descriptor-path: "${AIDSA_MODEL_DESCRIPTOR:}"
+    app-data-dir: "${AIDSA_MODEL_APP_DATA_DIR:}"
+  runtime:
+    executable-path: "${AIDSA_LLAMA_SERVER_PATH:}"
+    app-data-dir: "${AIDSA_RUNTIME_APP_DATA_DIR:}"
+    context-size: ${AIDSA_CTX_SIZE:4096}
+    threads: ${AIDSA_THREADS:0}
+    gpu-layers: ${AIDSA_GPU_LAYERS:0}
+    preferred-port: ${AIDSA_LLAMA_PORT:0}
+    startup-timeout-seconds: ${AIDSA_LLAMA_STARTUP_TIMEOUT:90}
+    request-timeout-seconds: ${AIDSA_LLAMA_REQUEST_TIMEOUT:120}
   frontend:
     dist-path: "${AIDSA_FRONTEND_DIST:}"
   security:

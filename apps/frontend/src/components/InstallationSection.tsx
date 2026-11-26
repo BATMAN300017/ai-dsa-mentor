@@ -1,21 +1,29 @@
 import { useState } from "react";
 import { INSTALL_TABS, type InstallTabKey } from "../data/landingContent";
-import type { BackendConnectionState, HealthResponse, SystemStatusResponse } from "../types/api";
+import type {
+  BackendConnectionState,
+  HealthResponse,
+  ModelStatusResponse,
+  SystemStatusResponse,
+} from "../types/api";
 import { AppIcon } from "./AppIcon";
 import { CopyButton } from "./CopyButton";
+import { ModelSetupPanel } from "./ModelSetupPanel";
 
 interface InstallationSectionProps {
   connectionState: BackendConnectionState;
   health: HealthResponse | null;
   systemStatus: SystemStatusResponse | null;
+  modelStatus: ModelStatusResponse | null;
   lastCheckedAt: string | null;
-  onRefresh: () => void;
+  onRefresh: () => Promise<void>;
 }
 
 export function InstallationSection({
   connectionState,
   health,
   systemStatus,
+  modelStatus,
   lastCheckedAt,
   onRefresh,
 }: InstallationSectionProps) {
@@ -36,9 +44,19 @@ export function InstallationSection({
         ? "Checking http://127.0.0.1:8787/api/v1/health"
         : "Start Spring Boot backend on port 8787";
 
-  const modelCardSub = systemStatus?.model
-    ? `${systemStatus.model.expectedQuantization} · ${systemStatus.model.downloadStatus}`
-    : "Qwen2.5-Coder-3B Q4_K_M · NOT_DOWNLOADED";
+  const modelCardSub = modelStatus
+    ? `${modelStatus.expectedQuantization} · ${modelStatus.downloadStatus}`
+    : systemStatus?.model
+      ? `${systemStatus.model.expectedQuantization} · ${systemStatus.model.downloadStatus}`
+      : "Qwen2.5-Coder-3B Q4_K_M · NOT_DOWNLOADED";
+
+  const runtimeCardSub = modelStatus
+    ? modelStatus.modelLoaded
+      ? `llama.cpp READY (127.0.0.1:${modelStatus.runtimePort})`
+      : modelStatus.runtimeAvailable
+        ? `llama.cpp Found (${modelStatus.runtimeStatus})`
+        : "llama-server not installed yet"
+    : "JavaFX Shell & MV3 Scaffold";
 
   return (
     <section className="w-full py-space-xl bg-surface-container-lowest relative" id="installation">
@@ -100,7 +118,7 @@ export function InstallationSection({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm pt-space-sm">
               <button
                 type="button"
-                onClick={onRefresh}
+                onClick={() => void onRefresh()}
                 className="bg-surface-container-low hover:bg-surface-container p-space-sm rounded-lg flex items-center gap-space-xs text-left transition-colors"
                 title={lastCheckedAt ? `Last checked at ${lastCheckedAt}. Click to re-check.` : "Click to probe backend"}
               >
@@ -146,16 +164,22 @@ export function InstallationSection({
                 <AppIcon name="extension" className="w-5 h-5 text-tertiary" />
                 <div className="flex flex-col min-w-0">
                   <span className="font-label-code text-label-code text-on-surface font-bold">
-                    Step 3: Desktop &amp; Ext
+                    Step 3: Local Runtime
                   </span>
                   <span className="font-body-sm text-body-sm text-on-surface-variant truncate">
-                    JavaFX Shell &amp; MV3 Scaffold
+                    {runtimeCardSub}
                   </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        <ModelSetupPanel
+          connectionState={connectionState}
+          modelStatus={modelStatus}
+          onRefresh={onRefresh}
+        />
       </div>
     </section>
   );

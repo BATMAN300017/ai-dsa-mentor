@@ -12,12 +12,26 @@ public record AppProperties(
         String applicationName,
         String version,
         ModelConfig model,
+        RuntimeConfig runtime,
         FrontendConfig frontend,
         SecurityConfig security
 ) {
     public record ModelConfig(
             String slug,
-            String descriptorPath
+            String descriptorPath,
+            String appDataDir
+    ) {
+    }
+
+    public record RuntimeConfig(
+            String executablePath,
+            String appDataDir,
+            int contextSize,
+            int threads,
+            int gpuLayers,
+            int preferredPort,
+            int startupTimeoutSeconds,
+            int requestTimeoutSeconds
     ) {
     }
 

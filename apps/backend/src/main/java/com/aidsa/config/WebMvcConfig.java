@@ -37,7 +37,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addMapping("/api/**")
                 .allowedOrigins(origins.toArray(String[]::new))
                 .allowedMethods("GET", "POST", "OPTIONS")
-                .allowedHeaders("Content-Type", "X-Mentor-Local-Token")
+                .allowedHeaders("Content-Type", "X-Mentor-Local-Token", "X-Mentor-Client")
                 .allowCredentials(false)
                 .maxAge(3600);
     }

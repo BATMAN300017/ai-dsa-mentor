@@ -65,6 +65,12 @@ public class LocalOriginFilter extends OncePerRequestFilter {
                 return;
             }
 
+            String secFetchSite = request.getHeader("Sec-Fetch-Site");
+            if (secFetchSite != null && "cross-site".equalsIgnoreCase(secFetchSite.trim())) {
+                writeForbidden(response, request, "Cross-site requests to local API are rejected");
+                return;
+            }
+
             boolean requireToken = properties.security() != null
                     && properties.security().requireLocalTokenForMutations();
             if (requireToken && isMutatingMethod(request.getMethod())) {

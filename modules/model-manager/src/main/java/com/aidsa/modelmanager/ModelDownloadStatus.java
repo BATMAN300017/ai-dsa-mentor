@@ -6,6 +6,9 @@ package com.aidsa.modelmanager;
 public enum ModelDownloadStatus {
     NOT_DOWNLOADED,
     DOWNLOADING,
+    VERIFYING,
     VERIFIED,
+    CANCELLED,
+    FAILED,
     MISSING_OR_CORRUPT
 }

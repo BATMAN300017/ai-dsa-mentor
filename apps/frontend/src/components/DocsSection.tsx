@@ -1,14 +1,20 @@
 import { useState } from "react";
-import type { BackendConnectionState, HealthResponse, SystemStatusResponse } from "../types/api";
+import type {
+  BackendConnectionState,
+  HealthResponse,
+  ModelStatusResponse,
+  SystemStatusResponse,
+} from "../types/api";
 import { AppIcon } from "./AppIcon";
 
 interface DocsSectionProps {
   connectionState: BackendConnectionState;
   health: HealthResponse | null;
   systemStatus: SystemStatusResponse | null;
+  modelStatus?: ModelStatusResponse | null;
 }
 
-export function DocsSection({ connectionState, health, systemStatus }: DocsSectionProps) {
+export function DocsSection({ connectionState, health, systemStatus, modelStatus }: DocsSectionProps) {
   const [showLiveJson, setShowLiveJson] = useState(false);
 
   return (
@@ -78,7 +84,7 @@ export function DocsSection({ connectionState, health, systemStatus }: DocsSecti
                   {
                     connectionState,
                     health: health ?? null,
-                    model: systemStatus?.model ?? null,
+                    model: modelStatus ?? systemStatus?.model ?? null,
                   },
                   null,
                   2

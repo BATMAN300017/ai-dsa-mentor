@@ -110,9 +110,9 @@ export const COMPATIBILITY_MATRIX: readonly CompatibilityGroup[] = [
     title: "Qwen2.5-Coder-3B",
     items: [
       { name: "Quantization", status: "GGUF Q4_K_M" },
-      { name: "Planned Runtime", status: "llama.cpp (Local)" },
+      { name: "Local Runtime", status: "llama.cpp Server" },
       { name: "Cloud LLM Dependency", status: "None (Offline First)" },
-      { name: "Model Binary Status", status: "Not Downloaded" },
+      { name: "Integrity Verification", status: "SHA-256 + Size" },
       { name: "AppData Model Storage", status: "Configured" },
     ],
   },
@@ -133,9 +133,9 @@ export const FAQ_ITEMS: readonly FaqEntry[] = [
   },
   {
     id: "faq-2",
-    question: "What is operational in Task 1 versus scheduled for later tasks?",
+    question: "What is operational now versus scheduled for later tasks?",
     answer:
-      "Task 1 provides the reproducible Java 21 monorepo, Spring Boot local health and system endpoints, strict localhost security filter foundation, JavaFX desktop shell with WebView/browser fallback, Chrome Manifest V3 extension scaffold, model metadata descriptor, and this React + TypeScript frontend. Actual GGUF model downloading, llama.cpp inference, Tree-sitter parsing, and LeetCode observation belong to subsequent tasks.",
+      "The foundation and local AI model layer are operational: Java 21 monorepo, Spring Boot local API with localhost origin/token security, resumable SHA-256-verified Qwen2.5-Coder-3B GGUF download manager, llama.cpp local server lifecycle and inference endpoints, JavaFX desktop shell, Chrome MV3 scaffold, and the React + TypeScript UI console. Socratic DSA tutoring policies, Tree-sitter AST parsing, sandboxed code execution, and LeetCode observation belong to upcoming tasks.",
   },
   {
     id: "faq-3",

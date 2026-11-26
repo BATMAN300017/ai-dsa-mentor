@@ -32,11 +32,12 @@ jobs:
           node-version: '20'
           cache: npm
           cache-dependency-path: apps/frontend/package-lock.json
-      - name: Install and Build Frontend
+      - name: Install, Test, and Build Frontend
         working-directory: apps/frontend
         run: |
           npm install
           npm run typecheck
+          npm test
           npm run build
 
   browser-extension-check:

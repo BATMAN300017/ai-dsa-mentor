@@ -1,55 +1,85 @@
 package com.aidsa.service;
 
+import com.aidsa.ai.InferenceRuntimeStatus;
+import com.aidsa.ai.LlamaCppInferenceProvider;
+import com.aidsa.ai.LlamaRuntimeSnapshot;
 import com.aidsa.config.AppProperties;
 import com.aidsa.dto.ModelDescriptorDto;
 import com.aidsa.dto.SystemStatusResponse;
 import com.aidsa.model.CapabilityDescriptor;
 import com.aidsa.model.CapabilityState;
-import com.aidsa.modelmanager.AppDataPathResolver;
+import com.aidsa.modelmanager.ModelDownloadProgress;
+import com.aidsa.modelmanager.ModelDownloadStatus;
+import com.aidsa.modelmanager.ModelManagerService;
 import com.aidsa.modelmanager.ModelMetadata;
-import com.aidsa.modelmanager.ModelMetadataReader;
 import com.aidsa.tutoring.SocraticPromptPolicy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 
 /**
- * Aggregates read-only Task 1 foundation status and model descriptor metadata.
+ * Aggregates live system, model installation, and local inference runtime telemetry.
  */
 @Service
 public class SystemStatusService {
 
-    private static final Logger log = LoggerFactory.getLogger(SystemStatusService.class);
-
     private final AppProperties properties;
-    private final ModelMetadataReader metadataReader;
-    private final AppDataPathResolver appDataPathResolver;
+    private final ModelManagerService modelManagerService;
+    private final LlamaCppInferenceProvider inferenceProvider;
 
     public SystemStatusService(
             AppProperties properties,
-            ModelMetadataReader metadataReader,
-            AppDataPathResolver appDataPathResolver
+            ModelManagerService modelManagerService,
+            LlamaCppInferenceProvider inferenceProvider
     ) {
         this.properties = properties;
-        this.metadataReader = metadataReader;
-        this.appDataPathResolver = appDataPathResolver;
+        this.modelManagerService = modelManagerService;
+        this.inferenceProvider = inferenceProvider;
     }
 
     public SystemStatusResponse getSystemStatus() {
-        ModelDescriptorDto modelDto = loadModelDescriptor();
+        ModelMetadata meta = modelManagerService.getMetadata();
+        ModelDownloadProgress progress = modelManagerService.inspectStatus();
+        LlamaRuntimeSnapshot runtime = inferenceProvider.snapshot();
+
+        ModelDescriptorDto modelDto = new ModelDescriptorDto(
+                meta.modelName(),
+                meta.modelProvider(),
+                meta.huggingFaceRepo(),
+                meta.expectedQuantization(),
+                meta.expectedFileFormat(),
+                meta.expectedFilename(),
+                progress.status().name(),
+                meta.runtimeTarget(),
+                progress.binaryPresentOnDisk()
+        );
+
+        CapabilityState modelManagerState = progress.status() == ModelDownloadStatus.VERIFIED
+                ? CapabilityState.FOUNDATION_READY
+                : CapabilityState.NOT_CONFIGURED;
+
+        CapabilityState aiEngineState = runtime.status() == InferenceRuntimeStatus.READY
+                ? CapabilityState.FOUNDATION_READY
+                : (runtime.runtimeAvailable() ? CapabilityState.IN_DEVELOPMENT : CapabilityState.NOT_CONFIGURED);
+
+        String aiNotes = switch (runtime.status()) {
+            case READY -> "llama-server ready on 127.0.0.1:" + runtime.port();
+            case STARTING -> "Loading Qwen2.5-Coder-3B GGUF into local memory";
+            case RUNTIME_MISSING -> "llama-server binary not yet installed";
+            case ERROR -> runtime.lastError() != null ? runtime.lastError() : "Runtime error";
+            default -> "llama-server discovered; model not loaded";
+        };
+
         List<CapabilityDescriptor> capabilities = List.of(
                 new CapabilityDescriptor("backend-api", "Spring Boot Local API", CapabilityState.FOUNDATION_READY, "Bound to 127.0.0.1 loopback"),
-                new CapabilityDescriptor("model-manager", "Qwen2.5-Coder-3B Metadata", CapabilityState.NOT_CONFIGURED, "Descriptor ready; model binary not downloaded"),
-                new CapabilityDescriptor("ai-engine", "llama.cpp Local Inference", CapabilityState.PLANNED, "Scheduled for Task 2+"),
-                new CapabilityDescriptor("code-analyzer", "Tree-sitter AST Analysis", CapabilityState.PLANNED, "Scheduled for Task 2+"),
-                new CapabilityDescriptor("tutoring-engine", "Socratic Guidance Engine", CapabilityState.PLANNED, "Policy guardrails defined"),
-                new CapabilityDescriptor("test-engine", "Isolated Sandbox Runner", CapabilityState.PLANNED, "Out-of-process policy defined"),
+                new CapabilityDescriptor("model-manager", "Qwen2.5-Coder-3B Model Manager", modelManagerState,
+                        progress.status() == ModelDownloadStatus.VERIFIED
+                                ? "GGUF verified against upstream SHA-256"
+                                : "Status: " + progress.status()),
+                new CapabilityDescriptor("ai-engine", "llama.cpp Local Inference", aiEngineState, aiNotes),
+                new CapabilityDescriptor("code-analyzer", "Tree-sitter AST Analysis", CapabilityState.PLANNED, "Scheduled for Task 4"),
+                new CapabilityDescriptor("tutoring-engine", "Socratic Guidance Engine", CapabilityState.PLANNED, "Scheduled for Task 3"),
+                new CapabilityDescriptor("test-engine", "Isolated Sandbox Runner", CapabilityState.PLANNED, "Scheduled for Task 5"),
                 new CapabilityDescriptor("browser-extension", "Manifest V3 Extension", CapabilityState.IN_DEVELOPMENT, "Scaffold ready; site adapters planned")
         );
 
@@ -58,77 +88,9 @@ public class SystemStatusService {
                 properties.version(),
                 SocraticPromptPolicy.CORE_PHILOSOPHY,
                 "127.0.0.1",
-                false,
+                runtime.modelLoaded(),
                 modelDto,
                 capabilities
         );
-    }
-
-    private ModelDescriptorDto loadModelDescriptor() {
-        String slug = properties.model() != null && properties.model().slug() != null
-                ? properties.model().slug()
-                : "qwen2.5-coder-3b";
-
-        Optional<Path> descriptorPath = resolveDescriptorPath(slug);
-        if (descriptorPath.isPresent()) {
-            try {
-                Optional<ModelMetadata> loaded = metadataReader.readFromFile(descriptorPath.get());
-                if (loaded.isPresent()) {
-                    ModelMetadata meta = loaded.get();
-                    boolean present = metadataReader.isModelBinaryPresent(
-                            meta,
-                            descriptorPath.get().getParent(),
-                            appDataPathResolver.resolveModelDirectory(slug)
-                    );
-                    return new ModelDescriptorDto(
-                            meta.modelName(),
-                            meta.modelProvider(),
-                            meta.huggingFaceRepo(),
-                            meta.expectedQuantization(),
-                            meta.expectedFileFormat(),
-                            meta.expectedFilename(),
-                            meta.downloadStatus(),
-                            meta.runtimeTarget(),
-                            present
-                    );
-                }
-            } catch (IOException ex) {
-                log.warn("Could not parse model-info.json at {}: {}", descriptorPath.get(), ex.getMessage());
-            }
-        }
-
-        return new ModelDescriptorDto(
-                "Qwen2.5-Coder-3B-Instruct",
-                "Qwen (Alibaba Cloud)",
-                "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF",
-                "Q4_K_M",
-                "GGUF",
-                "qwen2.5-coder-3b-instruct-q4_k_m.gguf",
-                "NOT_DOWNLOADED",
-                "llama.cpp",
-                false
-        );
-    }
-
-    private Optional<Path> resolveDescriptorPath(String slug) {
-        String configured = properties.model() != null ? properties.model().descriptorPath() : null;
-        if (configured != null && !configured.isBlank()) {
-            Path p = Path.of(configured).toAbsolutePath().normalize();
-            if (Files.isRegularFile(p)) {
-                return Optional.of(p);
-            }
-        }
-        List<Path> candidates = List.of(
-                Path.of("resources", "models", slug, "model-info.json"),
-                Path.of("..", "..", "resources", "models", slug, "model-info.json"),
-                Path.of("..", "resources", "models", slug, "model-info.json")
-        );
-        for (Path candidate : candidates) {
-            Path normalized = candidate.toAbsolutePath().normalize();
-            if (Files.isRegularFile(normalized)) {
-                return Optional.of(normalized);
-            }
-        }
-        return Optional.empty();
     }
 }

@@ -16,7 +16,8 @@ const SECTION_IDS = NAV_ITEMS.map((item) => item.id);
 
 export default function App() {
   const activeSection = useActiveSection(SECTION_IDS);
-  const { connectionState, health, systemStatus, lastCheckedAt, refresh } = useBackendStatus();
+  const { connectionState, health, systemStatus, modelStatus, lastCheckedAt, refresh } =
+    useBackendStatus();
 
   return (
     <div className="min-h-screen bg-surface text-on-surface">
@@ -32,6 +33,7 @@ export default function App() {
             connectionState={connectionState}
             health={health}
             systemStatus={systemStatus}
+            modelStatus={modelStatus}
           />
           <HowItWorksSection />
           <FeaturesSection />
@@ -39,8 +41,9 @@ export default function App() {
             connectionState={connectionState}
             health={health}
             systemStatus={systemStatus}
+            modelStatus={modelStatus}
             lastCheckedAt={lastCheckedAt}
-            onRefresh={() => void refresh()}
+            onRefresh={refresh}
           />
           <CompatibilitySection />
           <FaqSection />
@@ -48,6 +51,7 @@ export default function App() {
             connectionState={connectionState}
             health={health}
             systemStatus={systemStatus}
+            modelStatus={modelStatus}
           />
           <FinalCtaSection />
         </div>

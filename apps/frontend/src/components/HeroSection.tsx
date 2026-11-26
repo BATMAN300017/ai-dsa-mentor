@@ -7,23 +7,26 @@ interface HeroSectionProps {
   connectionState: BackendConnectionState;
   health: HealthResponse | null;
   systemStatus: SystemStatusResponse | null;
+  modelStatus?: import("../types/api").ModelStatusResponse | null;
 }
 
 const HERO_COMMAND = "./mvnw -pl apps/backend -am spring-boot:run";
 
-export function HeroSection({ connectionState, health, systemStatus }: HeroSectionProps) {
+export function HeroSection({ connectionState, health, systemStatus, modelStatus }: HeroSectionProps) {
   const [showPolicyNote, setShowPolicyNote] = useState(false);
 
   const modelStatusLabel =
     connectionState === "unavailable"
       ? "Backend Offline · Preview"
-      : health?.modelLoaded
+      : health?.modelLoaded || modelStatus?.modelLoaded
         ? "Qwen2.5-Coder-3B Loaded"
-        : "Model: Not Loaded (Task 1)";
+        : modelStatus?.modelLoading
+          ? "Model: Loading..."
+          : "Model: Not Loaded";
 
   const backendStatusLine =
     connectionState === "connected"
-      ? `API 127.0.0.1:8787 UP · ${systemStatus?.model.expectedQuantization ?? "Q4_K_M"} Metadata Ready`
+      ? `API 127.0.0.1:8787 UP · ${modelStatus?.expectedQuantization ?? systemStatus?.model.expectedQuantization ?? "Q4_K_M"} · ${modelStatus?.downloadStatus ?? systemStatus?.model.downloadStatus ?? "NOT_DOWNLOADED"}`
       : connectionState === "connecting"
         ? "Probing local Spring Boot backend..."
         : "Local backend not running yet — start with command above";
@@ -402,8 +405,9 @@ export function HeroSection({ connectionState, health, systemStatus }: HeroSecti
                 </p>
                 {showPolicyNote && (
                   <p className="font-body-sm text-body-sm text-secondary bg-surface-container-lowest p-space-xs rounded">
-                    Task 1 status: Live local inference with Qwen2.5-Coder-3B-Instruct (GGUF Q4_K_M)
-                    is not yet enabled. No simulated AI output is generated.
+                    Socratic DSA tutoring policy belongs to Task 3. Local Qwen2.5-Coder-3B model
+                    download, verification, llama.cpp loading, and raw inference testing are ready
+                    below in Local Setup.
                   </p>
                 )}
                 <div className="pt-space-xs flex items-center justify-between">

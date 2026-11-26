@@ -1,21 +1,22 @@
 package com.aidsa.service;
 
+import com.aidsa.ai.InferenceProvider;
 import com.aidsa.config.AppProperties;
 import com.aidsa.dto.HealthResponse;
 import org.springframework.stereotype.Service;
 
 /**
- * Provides application health telemetry.
- * In Task 1, {@code modelLoaded} is always {@code false} because local GGUF inference
- * belongs to a subsequent task.
+ * Provides application health telemetry reflecting live local model readiness.
  */
 @Service
 public class HealthService {
 
     private final AppProperties properties;
+    private final InferenceProvider inferenceProvider;
 
-    public HealthService(AppProperties properties) {
+    public HealthService(AppProperties properties, InferenceProvider inferenceProvider) {
         this.properties = properties;
+        this.inferenceProvider = inferenceProvider;
     }
 
     public HealthResponse getHealth() {
@@ -23,7 +24,7 @@ public class HealthService {
                 "UP",
                 properties.applicationName(),
                 properties.version(),
-                false
+                inferenceProvider.isModelLoaded()
         );
     }
 }

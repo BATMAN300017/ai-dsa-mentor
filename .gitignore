@@ -45,6 +45,8 @@ desktop.ini
 
 # AI Model Binaries & Local Runtimes (Never commit large binaries)
 *.gguf
+*.gguf.part
+*.part
 *.ggml
 *.bin
 *.safetensors

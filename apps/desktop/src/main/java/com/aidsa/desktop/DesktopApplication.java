@@ -103,7 +103,7 @@ public class DesktopApplication extends Application {
         rootPane.setTop(null);
 
         VBox panel = buildStatusPane("AI DSA Mentor Desktop Ready", reason);
-        Label infoLabel = new Label("Local URL: " + url + "  •  Model: Qwen2.5-Coder-3B-Instruct Q4_K_M (Not Loaded)");
+        Label infoLabel = new Label("Local URL: " + url + "  •  Model: Qwen2.5-Coder-3B-Instruct Q4_K_M (Manage via Local Web UI)");
         infoLabel.setStyle("-fx-text-fill: #7bd0ff; -fx-font-family: monospace; -fx-font-size: 12px;");
 
         Button openButton = new Button("Open in Default Browser");

@@ -44,10 +44,28 @@ public class AppDataPathResolver {
     }
 
     public Path resolveModelDirectory(String modelSlug) {
-        return resolveModelsDirectory().resolve(modelSlug);
+        return resolveModelsDirectory().resolve(requireSafeSingleSegment(modelSlug, "modelSlug"));
+    }
+
+    public Path resolveRuntimesDirectory() {
+        return resolveAppDataRoot().resolve("runtimes");
+    }
+
+    public Path resolveRuntimeDirectory(String runtimeName) {
+        return resolveRuntimesDirectory().resolve(requireSafeSingleSegment(runtimeName, "runtimeName"));
     }
 
     public Path resolveLogsDirectory() {
         return resolveAppDataRoot().resolve("logs");
+    }
+
+    private static String requireSafeSingleSegment(String segment, String label) {
+        if (segment == null || segment.isBlank()
+                || segment.contains("/")
+                || segment.contains("\\")
+                || segment.contains("..")) {
+            throw new IllegalArgumentException("Invalid " + label + ": must be a single path segment");
+        }
+        return segment.trim();
     }
 }

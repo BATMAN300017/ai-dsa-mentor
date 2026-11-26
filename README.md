@@ -2,22 +2,22 @@
 
 > **"Think with me. Don't solve it for me."**
 
-**AI DSA Mentor** is a local-first AI-powered Data Structures and Algorithms (DSA) tutoring application built around Java 21, Spring Boot, JavaFX, React + TypeScript, and a Chrome Manifest V3 extension. It is designed to guide students through progressive Socratic hints, mistake detection, and complexity intuition without immediately revealing full solutions.
+**AI DSA Mentor** is a local-first AI-powered Data Structures and Algorithms (DSA) tutoring application built around Java 21, Spring Boot, JavaFX, React + TypeScript, and a Chrome Manifest V3 extension.
 
 ---
 
-## Task 1 Scope & Current Status
+## Current Scope & Status (Task 2: Local AI Model Integration)
 
-Task 1 delivers the **reproducible project foundation**:
+Implemented so far:
 
 - Multi-module Java 21 Maven monorepo (`modules/*`, `apps/backend`, `apps/desktop`) with Maven Wrapper (`mvnw` / `mvnw.cmd`).
-- Spring Boot 3.4 backend bound strictly to `127.0.0.1` (`GET /api/v1/health`, `GET /api/v1/system/status`), structured exception handling, and localhost origin/token security foundations.
-- Integrated React + TypeScript + Tailwind CSS frontend faithfully converted from the supplied Stitch design (`apps/frontend`), connected to the backend health/status API.
-- JavaFX 21 desktop shell (`apps/desktop`) with single-instance `BackendLauncher` (no duplicate backend processes) and `WebViewManager` with automatic default-browser fallback.
-- Chrome Manifest V3 browser extension scaffold (`apps/browser-extension`) with background service worker, popup, and localhost messaging bridge.
-- Target model descriptor at [`resources/models/qwen2.5-coder-3b/model-info.json`](resources/models/qwen2.5-coder-3b/model-info.json) for **Qwen2.5-Coder-3B-Instruct (GGUF Q4_K_M)** (not downloaded in Task 1).
+- **Model Manager (`modules/model-manager`)**: Pinned descriptor for **Qwen2.5-Coder-3B-Instruct (GGUF Q4_K_M)** (`resources/models/qwen2.5-coder-3b/model-info.json`), OS AppData storage (`%LOCALAPPDATA%\AI DSA Mentor\models\qwen2.5-coder-3b`), `.part` resumable downloads with HTTP `Range`, cancellation, and SHA-256 verification against the trusted Hugging Face LFS digest.
+- **Local Inference Engine (`modules/ai-engine`)**: Loopback-only (`127.0.0.1`) `llama.cpp` `llama-server` subprocess discovery, lifecycle management (start, `/health` readiness polling, unexpected exit handling, unload, shutdown), and CPU-only inference (`-ngl 0`).
+- **Spring Boot Backend (`apps/backend`)**: Bound strictly to `127.0.0.1:8787`, exposing `/api/v1/health`, `/api/v1/system/status`, `/api/v1/security/handshake`, `/api/v1/model/status`, `/api/v1/model/download`, `/api/v1/model/download/cancel`, `/api/v1/model/load`, `/api/v1/model/unload`, and `/api/v1/ai/infer`.
+- **Frontend UI (`apps/frontend`)**: Stitch-themed React + TypeScript landing page with the integrated **Local Model & Runtime Console** under `#installation` for downloading, verifying, loading/unloading, and running raw local inference tests.
+- **Desktop Shell & Extension Scaffold**: JavaFX 21 single-instance `BackendLauncher` (`apps/desktop`) and Chrome MV3 extension scaffold (`apps/browser-extension`).
 
-Not yet implemented (scheduled for subsequent tasks): `llama.cpp` inference, GGUF model downloading, Socratic LLM hint generation, Tree-sitter parsing, complexity analysis, sandboxed code execution, LeetCode DOM observation, voice interaction, learning analytics, and `jpackage` installers.
+Not yet implemented (reserved for Tasks 3–8): Socratic DSA tutoring policy (`modules/tutoring-engine`), Tree-sitter AST parsing (`modules/code-analyzer`), isolated test sandbox (`modules/test-engine`), LeetCode adapters (`apps/browser-extension`), voice mentoring, and `jpackage` installers (`installer/`).
 
 ---
 
@@ -25,140 +25,70 @@ Not yet implemented (scheduled for subsequent tasks): `llama.cpp` inference, GGU
 
 | Tool | Required Version |
 | :--- | :--- |
-| **JDK** | Java 21 LTS or newer (includes `jpackage`) |
+| **JDK** | Java 21 LTS or newer |
 | **Maven** | Apache Maven 3.9+ (or included `./mvnw` / `mvnw.cmd`) |
 | **Node.js** | Node.js 20+ (with npm 10+) |
+| **Local Inference** | `llama.cpp` (`llama-server`, official `b12760` CPU release supported) |
 
-Planned local AI model:
-- **Model**: `Qwen2.5-Coder-3B-Instruct` (`GGUF`, `Q4_K_M`)
+Local AI Model:
+- **Model**: `Qwen2.5-Coder-3B-Instruct` (`GGUF`, `Q4_K_M`, `2,104,932,800` bytes)
 - **Repository**: https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct-GGUF
-- **Planned Runtime**: `llama.cpp` (100% local-first; no paid cloud LLM API)
-
----
-
-## Project Structure
-
-```text
-ai-dsa-mentor/
-├── apps/
-│   ├── backend/             # Spring Boot REST API (127.0.0.1:8787)
-│   ├── desktop/             # JavaFX 21 desktop shell & single-instance launcher
-│   ├── frontend/            # React + TypeScript + Vite + Tailwind CSS UI
-│   └── browser-extension/   # Chrome Manifest V3 companion scaffold
-├── modules/
-│   ├── ai-engine/           # Local inference contracts (llama.cpp boundary)
-│   ├── code-analyzer/       # AST analysis contracts (Tree-sitter boundary)
-│   ├── model-manager/       # Model metadata reader & OS AppData path resolver
-│   ├── session-manager/     # Tutoring session store & lifecycle contracts
-│   ├── test-engine/         # Out-of-process sandbox execution policy & contracts
-│   └── tutoring-engine/     # Progressive Socratic guidance policy contracts
-├── resources/
-│   ├── models/qwen2.5-coder-3b/model-info.json
-│   ├── runtimes/llama.cpp/
-│   ├── prompts/
-│   ├── dsa-knowledge/
-│   └── test-data/
-├── scripts/                 # Dev setup & placeholder model/release scripts
-├── installer/               # Future jpackage OS packaging targets
-├── docs/                    # Architecture, API, security, setup guides
-└── .github/workflows/       # CI workflow
-```
+- **Pinned Revision**: `f74adce6aa16316c625447af059dbebe4983757c`
 
 ---
 
 ## Quick Setup & Run Commands
 
-### 1. Automated Dev Setup
+### 1. Provision Dependencies & `llama.cpp` Runtime
 
-**Windows (PowerShell):**
+**Windows 11 (PowerShell, CPU-only):**
 ```powershell
 .\scripts\setup-dev.ps1
+.\scripts\setup-llama-cpp.ps1
 ```
 
 **macOS / Linux:**
 ```bash
 chmod +x scripts/*.sh
 ./scripts/setup-dev.sh
+./scripts/setup-llama-cpp.sh
 ```
 
-### 2. Start the Backend (`http://127.0.0.1:8787`)
+### 2. Build Frontend & Start Backend (`http://127.0.0.1:8787`)
 
-```bash
-# Linux / macOS
-./mvnw -pl apps/backend spring-boot:run
+```powershell
+# Build production frontend bundle served by Spring Boot
+Push-Location apps\frontend; npm install; npm run build; Pop-Location
 
-# Windows PowerShell
-.\mvnw.cmd -pl apps/backend spring-boot:run
+# Start Spring Boot backend (127.0.0.1:8787)
+.\mvnw.cmd -pl apps/backend -am spring-boot:run
 ```
+Open `http://127.0.0.1:8787` and use the **Local Model & Runtime Console** in `#installation` to download, verify, load, and test the model locally (or run `.\scripts\download-model.ps1`).
 
-Verify health check:
-```bash
-curl http://127.0.0.1:8787/api/v1/health
-```
-Expected response:
-```json
-{
-  "status": "UP",
-  "application": "AI DSA Mentor",
-  "version": "0.1.0",
-  "modelLoaded": false
-}
-```
+### 3. Run All Automated Tests
 
-### 3. Start the Frontend (`http://127.0.0.1:5173`)
+```powershell
+# Full Java Maven build & JUnit 5 verification (uses mocks; does not download 2 GB)
+.\mvnw.cmd clean verify
 
-```bash
-cd apps/frontend
-npm install
-npm run dev
-```
+# Frontend tests, typecheck & build
+Push-Location apps\frontend; npm test; npm run typecheck; npm run build; Pop-Location
 
-Build production frontend bundle (`apps/frontend/dist`):
-```bash
-cd apps/frontend
-npm run build
-```
-
-### 4. Build & Run the Desktop Application
-
-```bash
-# Build all modules including desktop & backend JARs
-./mvnw clean verify
-
-# Launch JavaFX desktop shell
-./mvnw -pl apps/desktop -am javafx:run
-```
-(On Windows, use `.\mvnw.cmd`.)
-
-### 5. Build & Validate the Browser Extension
-
-```bash
-cd apps/browser-extension
-npm install
-npm run build
-npm run validate
-```
-
-### 6. Run All Java Tests
-
-```bash
-# Linux / macOS
-./mvnw clean test
-
-# Windows PowerShell
-.\mvnw.cmd clean test
+# Browser extension manifest validation & build
+Push-Location apps\browser-extension; npm run validate; npm run build; Pop-Location
 ```
 
 ---
 
 ## Documentation
 
-- [Architecture Overview](docs/architecture.md)
-- [Installation Guide](docs/installation.md)
+- [Model Setup & Windows 11 CPU Guide](docs/model-setup.md)
 - [API Reference](docs/api-reference.md)
-- [Development Guide](docs/development-guide.md)
-- [Model Setup Guide](docs/model-setup.md)
+- [Architecture Overview](docs/architecture.md)
 - [Security Design](docs/security.md)
+- [Development Guide](docs/development-guide.md)
+- [Installation Guide](docs/installation.md)
+- [Development Progress Log](docs/DEVELOPMENT_PROGRESS.md)
 
 ---
 
