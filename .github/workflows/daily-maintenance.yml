@@ -1,0 +1,136 @@
+name: Daily Autonomous Maintenance Audit
+
+on:
+  schedule:
+    # 00:30 UTC every day = 06:00 AM IST (Asia/Kolkata, UTC+05:30), including weekends
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  daily-audit:
+    name: Daily Maintenance Audit & PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Run Maven Build & Tests
+        id: maven
+        continue-on-error: true
+        run: mvn -B verify
+
+      - name: Run Frontend Typecheck, Tests & Build
+        id: frontend
+        working-directory: apps/frontend
+        continue-on-error: true
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Run Browser Extension Validate & Build
+        id: extension
+        working-directory: apps/browser-extension
+        continue-on-error: true
+        run: |
+          npm ci
+          npm run validate
+          npm run build
+
+      - name: Generate Daily Maintenance Report
+        id: report
+        env:
+          MAVEN_OUTCOME: ${{ steps.maven.outcome }}
+          FRONTEND_OUTCOME: ${{ steps.frontend.outcome }}
+          EXTENSION_OUTCOME: ${{ steps.extension.outcome }}
+        run: |
+          DATE=$(date -u +'%Y-%m-%d')
+          BRANCH="maintenance/daily-audit-${DATE}"
+          echo "date=${DATE}" >> "$GITHUB_OUTPUT"
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+          mkdir -p docs/maintenance
+          REPORT_FILE="docs/maintenance/${DATE}.md"
+
+          cat <<EOF > "${REPORT_FILE}"
+          # Daily Maintenance Audit — ${DATE}
+
+          - **Schedule**: 00:30 UTC (06:00 AM IST)
+          - **Branch**: \`${BRANCH}\`
+          - **Commit**: \`${GITHUB_SHA}\`
+
+          ## Automated Checks
+          | Check | Outcome |
+          | --- | --- |
+          | Maven Build & Tests (\`mvn -B verify\`) | \`${MAVEN_OUTCOME}\` |
+          | Frontend Typecheck, Test & Build | \`${FRONTEND_OUTCOME}\` |
+          | Browser Extension Validate & Build | \`${EXTENSION_OUTCOME}\` |
+
+          ## Notes
+          - Automated PRs never merge themselves; human review and approval are mandatory.
+          - CodeRabbit reviews this PR automatically when the CodeRabbit GitHub App is enabled on the repository.
+          EOF
+
+      - name: Create Maintenance Branch and Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUDIT_DATE: ${{ steps.report.outputs.date }}
+          AUDIT_BRANCH: ${{ steps.report.outputs.branch }}
+          MAVEN_OUTCOME: ${{ steps.maven.outcome }}
+          FRONTEND_OUTCOME: ${{ steps.frontend.outcome }}
+          EXTENSION_OUTCOME: ${{ steps.extension.outcome }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --exit-code --heads origin "${AUDIT_BRANCH}" >/dev/null 2>&1; then
+            AUDIT_BRANCH="${AUDIT_BRANCH}-$(date -u +'%H%M%S')"
+          fi
+
+          git checkout -b "${AUDIT_BRANCH}"
+          git add "docs/maintenance/${AUDIT_DATE}.md"
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore(maintenance): daily automated review - ${AUDIT_DATE}"
+          git push -u origin "${AUDIT_BRANCH}"
+
+          gh pr create \
+            --base main \
+            --head "${AUDIT_BRANCH}" \
+            --title "chore(maintenance): daily automated review - ${AUDIT_DATE}" \
+            --body "## Summary
+          Automated daily maintenance audit for **${AUDIT_DATE}** (06:00 AM IST / 00:30 UTC).
+
+          ## Tests Executed & Results
+          - Maven (\`mvn -B verify\`): \`${MAVEN_OUTCOME}\`
+          - Frontend (typecheck, test, build): \`${FRONTEND_OUTCOME}\`
+          - Browser Extension (validate, build): \`${EXTENSION_OUTCOME}\`
+
+          ## CodeRabbit & Human Approval
+          - CodeRabbit will review this PR automatically if enabled on the repository.
+          - **Human approval is mandatory**: this workflow never merges or approves PRs."
